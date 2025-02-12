@@ -1,0 +1,57 @@
+------ Node.js + Express + MongoDb docs tutorial ------
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/skeleton_website
+
+
+express express-locallibrary-tutorial --view=pug    --> command for generating project files using Express Application Generator, using the Pug template library and no CSS engine
+
+The generator-created files define all variables as   var  .
+Open all of the generated files and change the var declarations to   const   before you continue.
+
+--
+
+cd express-locallibrary-tutorial    --> go to newly created directory
+
+npm install     --> install all of the dependencies, the install command will   fetch   all the dependency   packages   listed in the project's   package.json   file
+
+DEBUG=express-locallibrary-tutorial:* npm start     --> run the application with   debug mode
+npm start --> run the application
+
+--
+
+npm install --save-dev nodemon    --> Nodemon tool enables server restart on file changes, install as a developer dependency (and globaly: npm install -g nodemon)
+Now if you edit any file in the project the server will restart (or you can restart it by typing   rs   on the command prompt at any time).
+You will still need to   reload the browser    to refresh the page.
+
+
+"scripts": {
+    "start": "node ./bin/www",
+    "devstart": "nodemon ./bin/www",
+    "serverstart": "DEBUG=express-locallibrary-tutorial:* npm run devstart"
+  },
+
+We now have to call    npm run <script-name>    rather than just   npm start  , because "start" is actually an npm command that is mapped to the named script. 
+
+--
+
+The dependencies include the express package and the package for our selected view engine (pug). In addition, we have the following packages that are useful in many web applications:
+
+cookie-parser: Used to parse the cookie header and populate req.cookies (essentially provides a convenient method for accessing cookie information).
+debug: A tiny node debugging utility modeled after node core's debugging technique.
+morgan: An HTTP request logger middleware for node.
+http-errors: Create HTTP errors where needed (for express error handling).
+
+--
+
+run    npm install   after any changes in    package.json   !
+
+
+Usually library updates to the minor and patch version remain compatible. 
+We've prefixed each version with   ^   above so that we can automatically update to the latest minor.patch version by running:
+
+npm update --save
+
+Major versions change the compatibility. 
+For those updates we'll need to   manually   update the   package.json   and   code   that uses the library, and extensively   re-test the project  .
+
+--
+
