@@ -1,6 +1,18 @@
 ------ Node.js + Express + MongoDb docs tutorial ------
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/skeleton_website
 
+---
+
+Express.js, or simply    Express   ,                -->  is   a back end web application framework   for building   RESTful APIs   with   Node.js  ,
+                                                         released as free and open-source software under the MIT License.
+                                                         It is designed for building   web applications   and   APIs
+
+Node.js                                             -->  is a cross-platform, open-source   JavaScript runtime environment   that can run on Windows, Linux, Unix, macOS, and more
+                                                         Node.js runs on the   V8 JavaScript engine  (Chrome browser engine), and executes JavaScript code outside a web browser.
+
+---
+
+npm install express-generator -g                    --> install the generator tool site-wide using the npm package manager
 
 express express-locallibrary-tutorial --view=pug    --> command for generating project files using Express Application Generator, using the Pug template library and no CSS engine
 
