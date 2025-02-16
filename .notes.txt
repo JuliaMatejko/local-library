@@ -1,6 +1,26 @@
 ------ Node.js + Express + MongoDb docs tutorial ------
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/skeleton_website
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Express.js, or simply    Express   ,                -->  is   a back end web application framework   for building   RESTful APIs   with   Node.js  ,
+                                                         released as free and open-source software under the MIT License.
+                                                         It is designed for building   web applications   and   APIs
+
+Node.js                                             -->  is a cross-platform, open-source   JavaScript runtime environment   that can run on Windows, Linux, Unix, macOS, and more
+                                                         Node.js runs on the   V8 JavaScript engine  (Chrome browser engine), and executes JavaScript code outside a web browser.
+
+MongoDb                                             --> is a source-available, cross-platform,   document-oriented database program  . Classified as a   NoSQL database   product,
+                                                        MongoDB uses JSON-like documents with optional schemas.              
+
+   |->  Mongoose     -->   is a MongoDB object modeling tool (ORM/ODM - Object Relational Mapper/Object Document Mapper tool) designed to work in an asynchronous environment. 
+                           Mongoose provides a straight-forward, schema-based solution to model your application data.
+                           It includes built-in type casting, validation, query building, business logic hooks and more, out of the box.
+
+
+------ Creating a skeleton website --------------------------------------------------------------------------------------------------------------------------------------------------------
+
+npm install express-generator -g                    --> install the generator tool site-wide using the npm package manager
 
 express express-locallibrary-tutorial --view=pug    --> command for generating project files using Express Application Generator, using the Pug template library and no CSS engine
 
@@ -53,5 +73,280 @@ npm update --save
 Major versions change the compatibility. 
 For those updates we'll need to   manually   update the   package.json   and   code   that uses the library, and extensively   re-test the project  .
 
+
+--- Using a Database ( with MongoDB / Mongoose ) -------------------------------------------------------------------------------------------------------------------------------------------
+
+Object Relational Mapper ("ORM") and Object Document Mapper ("ODM") - These represent the website's data as JavaScript objects, which are then mapped to the underlying database. 
+
+Mongoose --> ODM
+
+A "collection" of "documents" in a MongoDB database is analogous to a "table" of "rows" in a relational database.
+
+The rest of this tutorial shows    how to   define and access   the Mongoose   schema and models   for the LocalLibrary website example.
+
+--- Designing the LocalLibrary models  --> UML
+
+--- Mongoose primer ---
+
+This section provides an overview of   how to connect Mongoose to a MongoDB database  ,    how to define a schema and a model   , and    how to make basic queries  .
+
+-- Installing Mongoose and MongoDB
+
+   npm install mongoose
+
+-- Connecting to MongoDB (locally hosted database)
+
+// Import the mongoose module
+const mongoose = require("mongoose");
+
+// Set `strictQuery: false` to globally opt into filtering by properties that aren't in the schema
+// Included because it removes preparatory warnings for Mongoose 7.
+// See: https://mongoosejs.com/docs/migrating_to_6.html#strictquery-is-removed-and-replaced-by-strict
+mongoose.set("strictQuery", false);
+
+// Define the database URL to connect to.
+const mongoDB = "mongodb://127.0.0.1/my_database";
+
+// Wait for database to connect, logging an error if there is a problem
+main().catch((err) => console.log(err));
+async function main() {
+  await mongoose.connect(mongoDB);
+}
+
+-- Defining and creating models
+
+Models are defined using the   Schema   interface. The Schema allows you to   define the fields   stored in each document along with their validation requirements and default values
+
+In addition, you can   define static and instance helper methods   to make it easier to work with your data types,
+and also   virtual properties   that you can use like any other field, but which aren't actually stored in the database (we'll discuss a bit further below).
+
+Schemas are then   "compiled" into models   using the   mongoose.model()   method.
+
+Once you have    a model   you can   use it   to   find  , create  , update  , and   delete   objects   of the given type.
+
+-- Defining schemas
+
+The code fragment below shows how you might   define a simple schema  .
+First you   require()   mongoose, then    use the Schema constructor   to create   a new schema instance  , defining the various fields inside it in the constructor's object parameter.
+
+// Require Mongoose
+const mongoose = require("mongoose");
+
+// Define a schema
+const Schema = mongoose.Schema;
+
+const SomeModelSchema = new Schema({
+  a_string: String,
+  a_date: Date,
+});
+
+-- Creating a model
+
+  Models   are created from schemas using the   mongoose.model()   method:
+
+  // Define schema
+const Schema = mongoose.Schema;
+
+const SomeModelSchema = new Schema({
+  a_string: String,
+  a_date: Date,
+});
+
+// Compile model from schema
+const SomeModel = mongoose.model("SomeModel", SomeModelSchema);
+
+The first argument is the singular name of the collection that will be created for your model (Mongoose will create the database collection for the model SomeModel above),
+and the second argument is the schema you want to use in creating the model.
+
+ Once you've defined your model classes you can use them to create, update, or delete records, and run queries to get all records or particular subsets of records.
+
+ -- Schema types (fields)
+
+ A schema can have an arbitrary number of   fields   — each one represents a field in the documents stored in MongoDB.
+ An example schema showing many of the common   field types   and how they are declared is shown below.
+
+ const schema = new Schema({
+  name: String,
+  binary: Buffer,
+  living: Boolean,
+  updated: { type: Date, default: Date.now() },
+  age: { type: Number, min: 18, max: 65, required: true },
+  mixed: Schema.Types.Mixed,
+  _someId: Schema.Types.ObjectId,
+  array: [],
+  ofString: [String], // You can also have an array of each of the other types too.
+  nested: { stuff: { type: String, lowercase: true, trim: true } },
+});
+
+Most of the   SchemaTypes   (the descriptors after "type:" or after field names) are self-explanatory.
+The exceptions are:
+    ObjectId:    Represents specific instances of a model in the database. For example, a book might use this to represent its author object.
+                 This will actually contain the    unique ID (_id)   for the specified object. We can use the populate() method to pull in the associated information when needed.
+    Mixed:       An arbitrary schema type.
+    []:          An array of items. You can perform JavaScript array operations on these models (push, pop, unshift, etc.).
+                 The examples above show an array of objects without a specified type and an array of String objects, but you can have an array of any type of object.
+
+The code also shows both ways of declaring a field:
+
+- Field   name   and   type   as    a key-value pair    (i.e. as done with fields name, binary and living).
+
+- Field   name   followed by   an object   defining the   type  , and   any other options   for the field.
+  Options include things like:
+   - default values.
+   - built-in validators (e.g. max/min values) and custom validation functions.
+   - Whether the field is required
+   - Whether String fields should automatically be set to lowercase, uppercase, or trimmed (e.g. { type: String, lowercase: true, trim: true })
+
+More on SchemaTypes:    https://mongoosejs.com/docs/schematypes.html      https://mongoosejs.com/docs/typescript.html    https://mongoosejs.com/docs/typescript/schemas.html
+
+-- Validation
+
+Mongoose provides built-in and custom validators, and synchronous and asynchronous validators.
+It allows you to specify both the acceptable range of values and the error message for validation failure in all cases.
+
+The built-in validators include:
+
+- All SchemaTypes have the built-in   required   validator. This is used to specify whether the field must be supplied in order to save a document.
+-   Numbers   have   min   and   max   validators.
+-   Strings   have:
+  - enum: specifies the set of allowed values for the field.
+  - match: specifies a regular expression that the string must match.
+  - maxLength and minLength for the string.
+
+The example below (slightly modified from the Mongoose documents) shows how you can specify some of the validator types and error messages:
+
+const breakfastSchema = new Schema({
+  eggs: {
+    type: Number,
+    min: [6, "Too few eggs"],
+    max: 12,
+    required: [true, "Why no eggs?"],
+  },
+  drink: {
+    type: String,
+    enum: ["Coffee", "Tea", "Water"],
+  },
+});
+
+-- Virtual properties
+   Virtual properties    are document properties that you can   get   and   set   but that   do not get persisted to MongoDB.
+
+   The   getters   are useful for formatting or combining fields, while   setters   are useful for de-composing a single value into multiple values for storage.
+   The example in the documentation constructs (and deconstructs) a   full name   virtual property from a   first   and   last name   field,
+   which is easier and cleaner than constructing a full name every time one is used in a template.
+
+    We will use a virtual property in the library to define a unique URL for each model record using a path and the record's _id value.
+
+-- Methods and query helpers
+  A schema can also have   instance methods  ,   static methods  , and   query helpers  .
+  
+  The   instance   and   static   methods are similar, but with the obvious difference that
+
+  an instance method   is associated with a particular record   and   has access to the current object  .
+  
+  Query helpers   allow you to   extend mongoose's chainable query builder API   
+  (for example, allowing you to add a query "byName" in addition to the find(), findOne() and findById() methods).
+
+-- Using models
+  Once you've created   a schema   you can use it to create   models  .
+  
+  The   model   represents  -->  a collection of documents in the database   that you can search,
+  
+  while the    model's instances    represent  -->  individual documents   that you can save and retrieve.
+
+  Creation, update, deletion and querying of records are   asynchronous operations   that return a   promise  .
+  The examples below show just the use of the relevant methods and   await   (i.e. the essential code for using the methods).
+  The surrounding   async   function and   try...catch   block to catch errors are omitted for clarity. !!!
+
+-- Creating and modifying documents
+To create a record you can define an instance of the model and then call   save()   on it.
+The examples below assume   SomeModel   is a model (with a single field   name  ) that we have created from our schema.
+
+--
+// Define schema
+const Schema = mongoose.Schema;
+
+const SomeModelSchema = new Schema({
+  a_string: String,
+  a_date: Date,
+});
+
+// Compile model from schema
+const SomeModel = mongoose.model("SomeModel", SomeModelSchema);
+
+
+// Create an instance of model SomeModel
+const awesome_instance = new SomeModel({ name: "awesome" });
+
+// Save the new model instance asynchronously
+await awesome_instance.save();
+
+
+You can also use   create()   to define the model instance at the same time as you save it.
+Below we create just one, but you can create multiple instances by passing in an array of objects.
+
+await SomeModel.create({ name: "also_awesome" });
 --
 
+Every model has an associated connection (this will be the default connection when you use mongoose.model()).
+You create a new connection and call   .model()   on it to create the documents on a different database.
+
+You can access the fields in this new record using the dot syntax, and change the values.
+You have to call   save()   or   update()   to store modified values back to the database.
+
+// Access model field values using dot notation
+console.log(awesome_instance.name); //should log 'also_awesome'
+
+// Change record by modifying the fields, then calling save().
+awesome_instance.name = "New cool name";
+await awesome_instance.save();
+
+-- Searching for records
+You can search for records using query methods, specifying the query conditions as a JSON document.
+The code fragment below shows how you might   find all athletes   in a database that   play tennis  ,   returning just the fields for athlete   name   and   age  .
+Here we just specify one matching   field   (sport) but you can add more criteria, specify regular expression criteria, or remove the conditions altogether to return all athletes.
+
+const Athlete = mongoose.model("Athlete", yourSchema);
+
+// find all athletes who play tennis, returning the 'name' and 'age' fields
+const tennisPlayers = await Athlete.find(
+  { sport: "Tennis" },
+  "name age",
+).exec();
+
+Query APIs  , such as   find()  , return a variable of type Query.
+You can   use a query object   to build up a query in parts   before   executing it   with the   exec()  method.
+  exec() executes the query and returns   a promise   that you can   await   on for the result.
+
+Above we've defined the query conditions in the   find()   method. We can also do this using a   where()   function,
+and we can    chain   all the parts of our query together using the dot operator (.) rather than adding them separately.
+The code fragment below is the same as our query above, with an additional condition for the age.
+
+Athlete.find()
+  .where("sport")
+  .equals("Tennis")
+  .where("age")
+  .gt(17)
+  .lt(50) // Additional where query
+  .limit(5)
+  .sort({ age: -1 })
+  .select("name age")
+  .exec();
+
+The   find()   method gets all matching records, but often you just want to get one match.
+The following methods query for a single record:
+
+- findById(): Finds the document with the specified id (every document has a unique id).
+
+- findOne(): Finds a single document that matches the specified criteria.
+
+- findByIdAndDelete(),   findByIdAndUpdate()  ,    findOneAndRemove()  ,   findOneAndUpdate()  :
+  Finds a single document by id or criteria and either updates or removes it. These are useful convenience functions for updating and removing records.
+
+There is also a   countDocuments()   method that you can   use to get the number of items that match conditions  .
+This is useful if you want to   perform a count   without   actually fetching the records.
+
+More on queries: https://mongoosejs.com/docs/queries.html
+
+
+-- Working with related documents — population
