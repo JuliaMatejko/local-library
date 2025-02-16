@@ -350,3 +350,136 @@ More on queries: https://mongoosejs.com/docs/queries.html
 
 
 -- Working with related documents — population
+
+You can create references from   one document/model instance to another   using the   ObjectId   schema field  ,
+or from   one document to many   using an   array   of ObjectIds.
+The field stores the id of the related model.
+If you need the actual content of the associated document, you can use the   populate()   method in a query to replace the id with the actual data.
+
+For example, the following schema defines authors and stories.
+Each author can have multiple stories, which we represent as an array of ObjectId.
+Each story can have a single author.
+The ref property tells the schema which model can be assigned to this field.
+
+const mongoose = require("mongoose");
+
+const Schema = mongoose.Schema;
+
+const authorSchema = new Schema({
+  name: String,
+  stories: [{ type: Schema.Types.ObjectId, ref: "Story" }],
+});
+
+const storySchema = new Schema({
+  author: { type: Schema.Types.ObjectId, ref: "Author" },
+  title: String,
+});
+
+const Story = mongoose.model("Story", storySchema);
+const Author = mongoose.model("Author", authorSchema);
+
+
+We can save our references to the related document by assigning the   _id   value.
+Below we create an author, then a story, and assign the author id to our story's author field.
+
+const bob = new Author({ name: "Bob Smith" });
+
+await bob.save();
+
+// Bob now exists, so lets create a story
+const story = new Story({
+  title: "Bob goes sledding",
+  author: bob._id, // assign the _id from our author Bob. This ID is created by default!
+});
+
+await story.save();
+
+
+Our story document now has an author referenced by the author document's ID.
+In order to get the author information in the story results we use   populate()  , as shown below.
+
+Story.findOne({ title: "Bob goes sledding" })
+  .populate("author") // Replace the author id with actual author information in results
+  .exec();
+
+Astute readers will have noted that we added an author to our story, but we didn't do anything to add our story to our author's stories array.
+How then can we get all stories by a particular author?
+One way would be to add our story to the stories array, but this would result in us having two places where the information relating authors and stories needs to be maintained.
+
+A better way is to get the _id of our author, then use find() to search for this in the author field across all stories.
+
+Story.find({ author: bob._id }).exec();
+
+More on populate: https://mongoosejs.com/docs/populate.html
+
+
+-- One schema/model per file
+While you can create schemas and models using any file structure you like, we highly recommend defining each model schema in its own module (file),
+then exporting the method to create the model. This is shown below:
+
+// File: ./models/some-model.js
+
+// Require Mongoose
+const mongoose = require("mongoose");
+
+// Define a schema
+const Schema = mongoose.Schema;
+
+const SomeModelSchema = new Schema({
+  a_string: String,
+  a_date: Date,
+});
+
+// Export function to create "SomeModel" model class
+module.exports = mongoose.model("SomeModel", SomeModelSchema);
+
+You can then require and use the model immediately in other files. Below we show how you might use it to get all instances of the model.
+
+// Create a SomeModel model just by requiring the module
+const SomeModel = require("../models/some-model");
+
+// Use the SomeModel object (model) to find all SomeModel records
+const modelInstances = await SomeModel.find().exec();
+
+--- Setting up a MongoDB database with MongDB Atlas ---
+
+MongoDB Atlas --> cloud-hosted sandbox database
+
+
+1. How to: set up new db in MongDB Atlas:   https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/mongoose
+2. Install Mongoose package -->  npm install mongoose
+3. Connect to MongoDB
+  Open /app.js (in the root of your project) and copy the following text below where you declare the Express application object (after the line const app = express();).
+  Replace the database URL string ('insert_your_database_url_here') with the location URL representing your own database (i.e. using the information from MongoDB Atlas).
+
+  // Set up mongoose connection
+const mongoose = require("mongoose");
+mongoose.set("strictQuery", false);
+const mongoDB = "insert_your_database_url_here";
+
+main().catch((err) => console.log(err));
+async function main() {
+  await mongoose.connect(mongoDB);
+}
+
+As discussed in the Mongoose primer above, this code creates the default connection to the database and reports any errors to the console.
+
+Note that hard-coding database credentials in source code as shown above is not recommended. !!!
+We do it here because it shows the core connection code, and because during development there is no significant risk that leaking these details will expose
+or corrupt sensitive information. We'll show you how to do this more safely when deploying to production!
+
+4. Create models on seperate modules.
+
+-- Defining the LocalLibrary Schema
+Define a separate module for each model, as discussed above.
+Start by creating a folder for our models in the project root (/models) and then create separate files for each of the models
+
+/express-locallibrary-tutorial  // the project root
+  /models
+    author.js
+    book.js
+    bookinstance.js
+    genre.js
+
+5. Populate db using populatedb.js
+   Run command:    node populatedb "<your MongoDB url>"
