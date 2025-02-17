@@ -483,3 +483,172 @@ Start by creating a folder for our models in the project root (/models) and then
 
 5. Populate db using populatedb.js
    Run command:    node populatedb "<your MongoDB url>"
+
+------- Routes and controllers -------------------------------------------------------------------------------------------------------------------------------------------
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/routes
+
+The diagram (README.md) !!! is provided as a reminder of the main flow of data and things that need to be implemented when handling an HTTP request/response
+
+
+As we've already created the models, the main things we'll need to create are:
+
+-   "Routes"   to   forward   the supported requests (  and   any information encoded in request URLs) to the appropriate   controller functions  .
+
+-   Controller functions   to   get   the requested data from the models,  create  an HTML page displaying the data, and  return it  to the user to view in the browser.
+
+-   Views    (templates)   used by the controllers to   render the data  .
+
+Ultimately we might have pages to show lists and detail information for books, genres, authors and bookinstances, along with pages to create, update, and delete records
+
+--- Routes primer
+
+A route    is a section of Express code that associates an   HTTP verb   (GET, POST, PUT, DELETE, etc.),
+a URL path/pattern  , and   a function   that is called to handle that pattern.
+
+There are several ways to create routes. For this tutorial we're going to use the    express.Router middleware    
+as it allows us to   group the route handlers for a particular part of a site together   and   access them using   a common route-prefix  .
+
+-- Defining and using separate route modules
+-- Route functions
+
+Router functions are Express   middleware   , which means that    they must either complete (respond to) the request   or   call the next function in the chain.
+
+-- HTTP verbs
+
+The example routes above use the   Router.get()   method to respond to HTTP GET requests with a certain path.
+
+The Router also provides route methods for all the other HTTP verbs, that are mostly used in exactly the same way:
+post(), put(), delete(), options(), trace(), copy(), lock(), mkcol(), move(), purge(), propfind(), proppatch(),
+unlock(), report(), mkactivity(), checkout(), merge(), m-search(), notify(), subscribe(), unsubscribe(), patch(), search(), and connect().
+
+
+-- Route paths
+
+The route paths define the endpoints at which requests can be made. The examples we've seen so far have just been strings,
+and are used exactly as written: '/', '/about', '/book', '/any-random.path'.
+
+Route paths can also be string patterns. String patterns use a form of regular expression syntax to define patterns of endpoints that will be matched.
+The syntax is listed below (note that the hyphen (-) and the dot (.) are interpreted literally by string-based paths):
+
+?   : The endpoint must have   0 or 1   of the   preceding character   (or group), e.g. a route path of '/ab?cd' will match endpoints acd or abcd.
++   : The endpoint must have   1 or more   of the   preceding character   (or group), e.g. a route path of '/ab+cd' will match endpoints abcd, abbcd, abbbcd, and so on.
+*   : The endpoint may have   an arbitrary string   where the * character is placed. E.g. a route path of '/ab*cd' will match endpoints abcd, abXcd, abSOMErandomTEXTcd, and so on.
+()  : Grouping match on a set of characters to perform another operation on, e.g. '/ab(cd)?e' will perform a ?-match on the group (cd) — it will match abe and abcde.
+
+The route paths can also be JavaScript regular expressions.
+
+
+-- Route parameters
+
+Route parameters are named   URL segments   used to capture values at specific positions in the URL
+
+The named segments   are prefixed with a colon   and then the name (E.g.,   /:your_parameter_name/  ).
+The captured values are stored in the   req.params   object  using the parameter names as keys (E.g.,   req.params.your_parameter_name  ).
+
+So for example, consider a URL encoded to contain information about users and books:         http://localhost:3000/users/34/books/8989.
+We can extract this information as shown below, with the userId and bookId path parameters:
+
+app.get("/users/:userId/books/:bookId", (req, res) => {
+  // Access userId via: req.params.userId
+  // Access bookId via: req.params.bookId
+  res.send(req.params);
+});
+
+The names of route parameters must be made up of "word characters" (A-Z, a-z, 0-9, and _).
+
+The URL   /book/create   will be matched by a route like   /book/:bookId   (because :bookId is a placeholder for   any   string, therefore create matches).
+The   first route that matches an incoming URL   will be used, so if you want to process /book/create URLs specifically,
+their route handler   must be defined   before   your   /book/:bookId  route.
+
+Express docs on routing:    https://expressjs.com/en/starter/basic-routing.html   https://expressjs.com/en/guide/routing.html
+
+-- Handling errors in the route functions
+
+The route functions shown earlier all have arguments   req   and   res  , which represent the request and response, respectively.
+Route functions are also called with a third argument   next  , which can be used   to pass errors   to the Express middleware chain.
+
+-- Handling exceptions in route functions
+
+-- Routes needed for the LocalLibrary
+
+The URLs that we're ultimately going to need for our pages are listed below, where   object   is replaced by the name of each of our models 
+(book, bookinstance, genre, author),   objects   is the plural of object, and   id   is the unique instance field (_id) that is given to each Mongoose model instance by default.
+
+catalog/ — The home/index page.
+catalog/<objects>/ — The list of all books, bookinstances, genres, or authors (e.g. /catalog/books/, /catalog/genres/, etc.)
+catalog/<object>/<id> — The detail page for a specific book, bookinstance, genre, or author with the given _id field value (e.g. /catalog/book/584493c1f4887f06c0e67d37).
+catalog/<object>/create — The form to create a new book, bookinstance, genre, or author (e.g. /catalog/book/create).
+catalog/<object>/<id>/update — The form to update a specific book, bookinstance, genre, or author with the given _id field value (e.g. /catalog/book/584493c1f4887f06c0e67d37/update).
+catalog/<object>/<id>/delete — The form to delete a specific book, bookinstance, genre, or author with the given _id field value (e.g. /catalog/book/584493c1f4887f06c0e67d37/delete).
+
+The first home page and list pages don't encode any additional information.
+While the results returned will depend on the model type and the content in the database, the queries run to get the information will always be the same
+(similarly the code run for object creation will always be similar).
+
+By contrast the other URLs are used to act on a specific document/model instance—these encode the identity of the item in the URL (shown as <id> above).
+We'll use path parameters to extract the encoded information and pass it to the route handler
+(and in a later article we'll use this to dynamically determine what information to get from the database).
+By encoding the information in our URL we only need one route for every resource of a particular type (e.g. one route to handle the display of every single book item).
+
+xpress allows you to construct your URLs any way you like — you can encode information in the body of the URL as shown above or use URL GET parameters (e.g. /book/?id=6).
+Whichever approach you use, the URLs should be kept clean, logical and readable
+
+--- Create the route-handler callback functions
+
+Start by creating a folder for our controllers in the project root (/controllers) and then create separate controller files/modules for handling each of the models:
+
+/express-locallibrary-tutorial  //the project root
+  /controllers
+    authorController.js
+    bookController.js
+    bookinstanceController.js
+    genreController.js
+
+The controllers will use the express-async-handler module, so before we proceed, install it into the library using npm:
+
+npm install express-async-handler
+
+--
+express-async-handler module --> defines a wrapper function that hides the try...catch block and the code to forward the error. 
+
+
+without express-async-handler module:
+
+exports.get("/about", async function (req, res, next) {
+  try {
+    const successfulResult = await About.find({}).exec();
+    res.render("about_view", { title: "About", list: successfulResult });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+with:
+
+// Import the module
+const asyncHandler = require("express-async-handler");
+
+exports.get(
+  "/about",
+  asyncHandler(async (req, res, next) => {
+    const successfulResult = await About.find({}).exec();
+    res.render("about_view", { title: "About", list: successfulResult });
+  }),
+);
+
+-- Create the catalog route module
+
+The skeleton already has a ./routes folder containing routes for the index and users. Create another route file — catalog.js — inside this folder, as shown.
+
+/express-locallibrary-tutorial //the project root
+  /routes
+    index.js
+    users.js
+    catalog.js
+
+-- Update the index route module
+
+-- Update app.js
+
+ We have added our catalog module at a path '/catalog'. This is prepended to all of the paths defined in the catalog module.
+ So for example, to access a list of books, the URL will be: /catalog/books/.
