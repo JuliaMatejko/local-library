@@ -652,3 +652,16 @@ The skeleton already has a ./routes folder containing routes for the index and u
 
  We have added our catalog module at a path '/catalog'. This is prepended to all of the paths defined in the catalog module.
  So for example, to access a list of books, the URL will be: /catalog/books/.
+
+ --- Templates -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/Displaying_data
+
+ --- Template primer
+ https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/Displaying_data/Template_primer
+
+ A   template   is   a text file defining the structure or layout of an output file  , with   placeholders   used to represent where data will be inserted when the template is rendered
+ (in Express, templates are referred to as   views  ).
+
+- Express template choices
+Express can be used with many different template rendering engines. In this tutorial we use   Pug   (formerly known as   Jade  ) for our templates.
+
