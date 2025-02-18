@@ -714,3 +714,10 @@ Before the data from a form is stored it must be   validated   and   sanitized  
 For this tutorial, we'll be using the popular   express-validator   module  to perform both validation and sanitization of our form data.
 https://express-validator.github.io/docs/#basic-guide
 
+-- Create genre form
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/forms/Create_genre_form
+
+Same pattern is used in all our post controllers: we run validators (with sanitizers), then check for errors and either re-render the form with error information or save the data.
+
+The form defines a single required field of type "text" called "name". The default value of the field depends on whether the genre variable is defined.
+If called from the GET route it will be empty as this is a new form. If called from a POST route it will contain the (invalid) value originally entered by the user.
