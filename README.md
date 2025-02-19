@@ -1,3 +1,6 @@
+<img alt="image" src="https://github.com/user-attachments/assets/c280eacf-e37c-4acc-ae28-c88837de01ac" />
+
+---
 Handling HTTP request/response, data flow, in MVC web application
 
 ![mvc_express](https://github.com/user-attachments/assets/83ab9db2-758c-46e4-828c-35f9e5d4736c)
@@ -13,3 +16,4 @@ Web server form handling
 
 Source:
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/forms
+
