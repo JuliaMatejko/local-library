@@ -721,3 +721,25 @@ Same pattern is used in all our post controllers: we run validators (with saniti
 
 The form defines a single required field of type "text" called "name". The default value of the field depends on whether the genre variable is defined.
 If called from the GET route it will be empty as this is a new form. If called from a POST route it will contain the (invalid) value originally entered by the user.
+
+--- Deploying to production
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/deployment
+
+-- What is a production environment?
+The production environment is the environment provided by the server computer where you will run your website for external consumption. The environment includes:
+
+- Computer hardware on which the website runs.
+- Operating system (e.g. Linux or Windows).
+- Programming language runtime and framework libraries on top of which your website is written.
+- Web server infrastructure, possibly including a web server, reverse proxy, load balancer, etc.
+- Databases on which your website is dependent.
+
+The server computer could be located on your premises and connected to the Internet by a fast link, but it is far more common to use a computer that is hosted "in the cloud".
+
+This sort of remotely accessible computing/networking hardware is referred to as    Infrastructure as a Service (IaaS)   .
+
+Other hosting providers support Express as part of a    Platform as a Service (PaaS)    offering.
+When using this sort of hosting you don't need to worry about most of your production environment (servers, load balancers, etc.) 
+When you're getting started, setting up your website on a PaaS system is much easier, so that is what we'll do in this tutorial.
+
+-- Database configuration

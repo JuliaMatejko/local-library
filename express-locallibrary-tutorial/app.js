@@ -4,6 +4,10 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const compression = require("compression");
+const helmet = require("helmet");
+// Set up rate limiter: maximum of twenty requests per minute
+const RateLimit = require("express-rate-limit");
 
 // Importing route modules
 const indexRouter = require('./routes/index');
@@ -13,10 +17,30 @@ const catalogRouter = require("./routes/catalog"); // Import routes for "catalog
 // Creating Express object
 const app = express();
 
+const limiter = RateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 20,
+});
+// Apply rate limiter to all requests
+app.use(limiter);
+
+// Add helmet to the middleware chain.
+// Set CSP headers to allow our Bootstrap and jQuery to be served
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      "script-src": ["'self'", "code.jquery.com", "cdn.jsdelivr.net"],
+    },
+  }),
+);
+
 // Set up mongoose connection
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
-const mongoDB = "paste-here-mongodb-connection-string";    // !!! DO NOT COMMIT CREDENTIALS
+
+const dev_db_url =
+  "mongodb+srv://your_user_name:your_password@cluster0.7yonm.mongodb.net/local_library?retryWrites=true&w=majority&appName=Cluster0";
+const mongoDB = process.env.MONGODB_URI || dev_db_url;
 
 main().catch((err) => console.log(err));
 async function main() {
@@ -26,6 +50,8 @@ async function main() {
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+
+app.use(compression()); // Compress all routes
 
 // Setting up middleware - express.json() and express.urlencoded() are needed to populate req.body with the form fields
 app.use(logger('dev'));
