@@ -1,4 +1,14 @@
+Library Website project for learning purposes:
+- Tech stack: Node.js, Express.js, MongoDb (mongoose)
+- Functionalities: CRUD controllers, Routing, Connecting to MongoDb NoSQL document database, Pug templates
+
 <img alt="image" src="https://github.com/user-attachments/assets/c280eacf-e37c-4acc-ae28-c88837de01ac" />
+
+
+---
+UML
+
+![library_website_-_mongoose_express](https://github.com/user-attachments/assets/4e6a4490-c33e-404c-a191-10fcd18b340e)
 
 ---
 Handling HTTP request/response, data flow, in MVC web application
@@ -16,4 +26,3 @@ Web server form handling
 
 Source:
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/forms
-
