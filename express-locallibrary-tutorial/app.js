@@ -39,7 +39,7 @@ const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
 
 const dev_db_url =
-  "mongodb+srv://your_user_name:your_password@cluster0.7yonm.mongodb.net/local_library?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://cooluser:0mib7Sn2SrY6V6BU@cluster0.7yonm.mongodb.net/local_library?retryWrites=true&w=majority&appName=Cluster0";
 const mongoDB = process.env.MONGODB_URI || dev_db_url;
 
 main().catch((err) => console.log(err));
