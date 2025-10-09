@@ -483,25 +483,182 @@ block content
 
 --- Using a Database ( with MongoDB / Mongoose ) -------------------------------------------------------------------------------------------------------------------------------------------
 
-Object Relational Mapper ("ORM") and Object Document Mapper ("ODM") - These represent the website's data as JavaScript objects, which are then mapped to the underlying database. 
+---- What databases can I use?
 
-Mongoose --> ODM
+Express apps can use any database supported by Node (Express itself doesn't define any specific additional behavior/requirements for database management).
+There are many popular options, including PostgreSQL, MySQL, Redis, SQLite, and MongoDB.
 
+Database integration:
+https://expressjs.com/en/guide/database-integration.html
+
+---- What is the best way to interact with a database?
+
+There are two common approaches for interacting with a database:
+
+- Using the databases' native query language, such as SQL.
+- Using an   Object Relational Mapper ("ORM")   or   Object Document Mapper ("ODM").
+  --> These represent the website's data as JavaScript objects, which are then mapped to the underlying database.
+  --> Some ORMs and ODMs are tied to a specific database, while others provide a database-agnostic backend.
+
+The very best performance can be gained by using SQL, or whatever query language is supported by the database.
+Object mappers are often slower because they use translation code to map between objects and the database format,
+which may not use the most efficient database queries (this is particularly true if the mapper supports different database backends,
+and must make greater compromises in terms of what database features are supported).
+
+The benefit of using an ORM/ODM is that programmers can continue to think in terms of JavaScript objects rather than database semantics
+— this is particularly true if you need to work with different databases (on either the same or different websites).
+They also provide an obvious place to perform data validation.
+
+Note: Using ODM/ORMs often results in lower costs for development and maintenance! Unless you're very familiar with the native query language
+or performance is paramount, you should strongly consider using an ODM.
+
+
+---- Mongoose ----
+
+Mongoose --> ODM - Mongoose is a MongoDB object modeling tool designed to work in an asynchronous environment.
+https://www.npmjs.com/package/mongoose
+
+Mongoose acts as a front end to   MongoDB,   an open source  NoSQL database   that uses   a document-oriented data model  .
 A "collection" of "documents" in a MongoDB database is analogous to a "table" of "rows" in a relational database.
+https://mongoosejs.com/docs/guide.html
+
 
 The rest of this tutorial shows    how to   define and access   the Mongoose   schema and models   for the LocalLibrary website example.
 
---- Designing the LocalLibrary models  --> UML
 
---- Mongoose primer ---
+--- Designing the LocalLibrary models  -->    UML class diagram
+
+When designing your models it makes sense to have separate models for every "object" (a group of related information).
+In this case some obvious candidates for these models are books, book instances, and authors.
+
+You might also want to use models to represent selection-list options (e.g., like a drop-down list of choices),
+rather than hard-coding the choices into the website itself — this is recommended when all the options aren't known up front or may change.
+A good example is a genre (e.g., fantasy, science fiction, etc.).
+
+Once we've decided on our models and fields, we need to think about the relationships between them.
+
+-- models
+With that in mind, the   UML association diagram   below shows the models we'll define in this case (as boxes).
+As discussed above, we've created   models   for the book (the generic details of the book), book instance
+(status of specific physical copies of the book available in the system), and author. We have also decided to have a model
+for the genre so that values can be created dynamically. We've decided not to have a model for the BookInstance:status
+— we will hard code the acceptable values because we don't expect these to change. Within each of the boxes,
+you can see the model name, the field names and types, and also the methods and their return types.
+
+-- relationships
+The diagram also shows the   relationships   between the models  , including their   multiplicities  .
+
+The multiplicities   are the   numbers   on the diagram showing the   ! numbers (maximum and minimum) of each model that may be present in the relationship. !
+
+For example, the   connecting line   between the boxes shows that Book and a Genre   are related  .
+
+The numbers   close to the Book model   show that a   Genre must have   zero or more   Books (as many as you like), while the numbers on the other end of
+the line next to the Genre show that a book can have zero or more associated Genres.
+
+
+Note: As discussed in our Mongoose primer below it is often better to have the field that defines the relationship between the documents/models in just one model
+(you can still find the reverse relationship by searching for the associated _id in the other model). Below we have chosen to define the relationship
+between Book/Genre and Book/Author in the Book schema, and the relationship between the Book/BookInstance in the BookInstance Schema.
+This choice was somewhat arbitrary — we could equally well have had the field in the other schema.
+
+Note: The next section provides a basic primer explaining how models are defined and used.
+As you read it, consider how we will construct each of the models in the diagram above.
+
+---- Database APIs are asynchronous
+
+Database methods to create, find, update, or delete records are    asynchronous  .
+
+What this means is that   the methods return immediately  , and the   code to   handle   the success or failure   of the method   runs at a later time  !!!
+when the operation completes.
+
+Other code can execute while the server is waiting for the database operation to complete, so the server can remain responsive to other requests.
+
+JavaScript has a number of mechanisms for supporting asynchronous behavior.
+Historically JavaScript relied heavily on passing   callback functions   to asynchronous methods to handle the success and error cases.
+https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS/Introducing
+
+In modern JavaScript callbacks have largely been replaced by   Promises  .
+Promises are objects that are (immediately) returned by an asynchronous method that represent its future state.
+When the operation completes, the promise object is "settled", and resolves an object that represents the result of the operation or an error.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+There are two main ways you can use promises to run code when a promise is settled, and we highly recommend that you read How to use promises
+for a high level overview of both approaches. In this tutorial, we'll primarily be using   await   to wait on promise completion within an   async function  ,
+because this leads to more readable and understandable asynchronous code.
+
+
+The way this approach works is that you use the   async function   keyword to mark a function as asynchronous, !!!
+and then inside that function apply   await   to any method that returns a promise. 
+
+1. When the asynchronous function is executed its operation is paused at the first   await   method until the promise settles.
+
+2. From the perspective of the surrounding code the asynchronous function then returns and the code after it is able to run. 
+
+3. Later when the promise settles, the   await   method inside the asynchronous function returns with the result, or an error is thrown if the promise was rejected.
+
+4. The code in the asynchronous function then executes until either another await is encountered, at which point it will pause again,
+or until all the code in the function has been run.
+
+
+You can see how this works in the example below. myFunction() is an asynchronous function that is called within a try...catch block.
+When myFunction() is run, code execution is paused at methodThatReturnsPromise() until the promise resolves, at which point the code continues
+to functionThatReturnsPromise() and waits again. The code in the catch block runs if an error is thrown in the asynchronous function,
+and this will happen if the promise returned by either of the methods is rejected.
+
+async function myFunction() {
+  // …
+  await someObject.methodThatReturnsPromise();
+  // …
+  await functionThatReturnsPromise();
+  // …
+}
+
+try {
+  // …
+  myFunction();
+  // …
+} catch (e) {
+  // error handling code
+}
+
+The asynchronous methods above are run in sequence.
+If the methods don't depend on each other then you can run them in parallel and finish the whole operation more quickly.
+This is done using the   Promise.all()   method, which takes an iterable of promises as input and returns a single   Promise  .
+This returned promise fulfills when all of the input's promises fulfill, with an array of the fulfillment values.
+It rejects when any of the input's promises rejects, with this first rejection reason.
+
+The code below shows how this works. First, we have two functions that return promises.
+We await on both of them to complete using the promise returned by Promise.all().
+Once they both complete await returns and the results array is populated, the function then continues to the next await,
+and waits until the promise returned by anotherFunctionThatReturnsPromise() is settled. You would call the myFunction() in a try...catch block to catch any errors.
+
+async function myFunction() {
+  // …
+  const [resultFunction1, resultFunction2] = await Promise.all([
+    functionThatReturnsPromise1(),
+    functionThatReturnsPromise2(),
+  ]);
+  // …
+  await anotherFunctionThatReturnsPromise(resultFunction1);
+}
+
+
+--- Mongoose primer ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 This section provides an overview of   how to connect Mongoose to a MongoDB database  ,    how to define a schema and a model   , and    how to make basic queries  .
+
 
 -- Installing Mongoose and MongoDB
 
    npm install mongoose
 
+
 -- Connecting to MongoDB (locally hosted database)
+
+  Mongoose   requires a connection to a   MongoDB database  .
+  You can require() and connect to a locally hosted database with   mongoose.connect()   as shown below
+  (for the tutorial we'll instead connect to an internet-hosted database).
+
 
 // Import the mongoose module
 const mongoose = require("mongoose");
@@ -520,9 +677,20 @@ async function main() {
   await mongoose.connect(mongoDB);
 }
 
+Note: As discussed in the Database APIs are asynchronous section, here we await on the promise returned by the connect() method within an async function.
+We use the promise catch() handler to handle any errors when trying to connect, but we might also have called main() within a try...catch block.
+
+You can get the default   Connection   object with   mongoose.connection.
+If you need to create additional connections you can use   mongoose.createConnection()  .
+This takes the same form of database URI (with host, database, port, options, etc.) as   connect()   and returns a   Connection   object.
+Note that   createConnection()   returns immediately; if you need to wait on the connection to be established you can call it with   asPromise()   to return a promise
+(mongoose.createConnection(mongoDB).asPromise()).
+
+
 -- Defining and creating models
 
-Models are defined using the   Schema   interface. The Schema allows you to   define the fields   stored in each document along with their validation requirements and default values
+Models are defined using the   Schema   interface.
+The Schema allows you to   define the fields   stored in each document along with their validation requirements and default values
 
 In addition, you can   define static and instance helper methods   to make it easier to work with your data types,
 and also   virtual properties   that you can use like any other field, but which aren't actually stored in the database (we'll discuss a bit further below).
@@ -530,6 +698,10 @@ and also   virtual properties   that you can use like any other field, but which
 Schemas are then   "compiled" into models   using the   mongoose.model()   method.
 
 Once you have    a model   you can   use it   to   find  , create  , update  , and   delete   objects   of the given type.
+
+Note: Each model maps to a collection of documents in the MongoDB database.
+The documents will contain the fields/schema types defined in the model Schema.
+
 
 -- Defining schemas
 
@@ -546,6 +718,7 @@ const SomeModelSchema = new Schema({
   a_string: String,
   a_date: Date,
 });
+
 
 -- Creating a model
 
@@ -565,7 +738,8 @@ const SomeModel = mongoose.model("SomeModel", SomeModelSchema);
 The first argument is the singular name of the collection that will be created for your model (Mongoose will create the database collection for the model SomeModel above),
 and the second argument is the schema you want to use in creating the model.
 
- Once you've defined your model classes you can use them to create, update, or delete records, and run queries to get all records or particular subsets of records.
+Once you've defined your model classes you can use them to create, update, or delete records, and run queries to get all records or particular subsets of records.
+
 
  -- Schema types (fields)
 
@@ -708,7 +882,9 @@ console.log(awesome_instance.name); //should log 'also_awesome'
 awesome_instance.name = "New cool name";
 await awesome_instance.save();
 
+
 -- Searching for records
+
 You can search for records using query methods, specifying the query conditions as a JSON document.
 The code fragment below shows how you might   find all athletes   in a database that   play tennis  ,   returning just the fields for athlete   name   and   age  .
 Here we just specify one matching   field   (sport) but you can add more criteria, specify regular expression criteria, or remove the conditions altogether to return all athletes.
@@ -890,6 +1066,7 @@ Start by creating a folder for our models in the project root (/models) and then
 
 5. Populate db using populatedb.js
    Run command:    node populatedb "<your MongoDB url>"
+
 
 ------- Routes and controllers -------------------------------------------------------------------------------------------------------------------------------------------
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/routes
